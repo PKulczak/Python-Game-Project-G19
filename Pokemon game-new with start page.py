@@ -8,6 +8,8 @@ from Welcome import Welcome
 WIDTH = 500
 HEIGHT = 500
 
+walls_list = []
+
 class Clock:
     def __init__(self):
         self.time = 0
@@ -26,18 +28,28 @@ class Player:
     def __init__(self, clock): 
         self.clock = clock
         self.image = simplegui._load_local_image("player.png")
-        width = self.image.get_width()
-        frame_width = width//4
-        height = self.image.get_height()
-        frame_height = height//4
+
         self.rows = 4
         self.columns = 4
+        
+        width = self.image.get_width()
+        frame_width = width//self.columns
+        height = self.image.get_height()
+        frame_height = height//self.rows
+        
         self.pos = Vector(frame_width/2, frame_height/2)
         self.frame_center = [frame_width/2, frame_height/2]
         self.frame_dim = [frame_width, frame_height]
         self.frame_index = [0,0]
+        
         self.vel = Vector(0,0)
         self.moving = False
+
+        self.player_left = self.pos.x - self.frame_center[0]
+        self.player_right = self.pos.x + self.frame_center[0]
+        self.player_top = self.pos.y - self.frame_center[1]
+        self.player_bot = self.pos.y + self.frame_center[1]
+
 
     def draw(self, canvas):
         if self.moving == True:
@@ -130,10 +142,16 @@ class Interaction:
                 self.player.vel = Vector(0,0)
 
     def draw(self, canvas):
+        global walls_list
         if self.keyboard.start:
             self.update()
             self.player.update()
             self.player.draw(canvas)
+            for x in walls_list:
+                x.draw(canvas)
+                col = x.collision(self.player)
+                if col == True:
+                    x.interact(self.player)
         else:
             if not self.keyboard.tutorial:
                 self.welcome.draw(canvas)
@@ -144,6 +162,59 @@ class Interaction:
                     self.keyboard.back = False
             
 
+class Wall:
+    def __init__(self, name, pos):
+        walls_list.append(self)
+        self.image = simplegui._load_local_image(name)
+        self.width = self.image.get_width()
+        self.height = self.image.get_height()
+        self.pos = pos
+        self.frame_dim = [self.width*2, self.height*2]
+
+        self.wall_left = self.pos.x - (self.frame_dim[0]//2)
+        self.wall_right = self.pos.x + (self.frame_dim[0]//2)
+        self.wall_top = self.pos.y - (self.frame_dim[1]//2)
+        self.wall_bot = self.pos.y + (self.frame_dim[1]//2)
+
+
+    def draw(self, canvas):
+        canvas.draw_image(self.image, 
+                    [self.width//2, self.height//2], 
+                     [self.width, self.height], [self.pos.x,self.pos.y], [self.frame_dim[0],self.frame_dim[1]])
+        
+    def collision(self, player):
+        player.player_left = player.pos.x - (player.frame_dim[0]//4)
+        player.player_right = player.pos.x + (player.frame_dim[0]//4)
+        player.player_top = player.pos.y - (player.frame_dim[1]//4)
+        player.player_bot = player.pos.y + (player.frame_dim[1]//4)
+
+        col_left = ((self.wall_left - player.player_right) >= 0)
+        col_right = ((player.player_left - self.wall_right) >= 0)
+        col_top = ((self.wall_top - player.player_bot) >= 0)
+        col_bot = ((player.player_top - self.wall_bot) >= 0)
+
+        collision = True
+        if (col_right) :
+            collision = False
+        if (col_left):
+            collision = False
+        if (col_bot):
+            collision = False
+        if (col_top):
+            collision = False
+
+        return collision
+
+    def interact(self, player):
+        if player.vel.x > 0:
+            player.pos.x = self.wall_left-(player.frame_dim[0]//4)
+        if player.vel.x < 0:
+            player.pos.x = self.wall_right+(player.frame_dim[0]//4)
+        if player.vel.y > 0:
+            player.pos.y = self.wall_top-(player.frame_dim[1]//4)
+        if player.vel.y < 0:
+            player.pos.y = self.wall_bot+(player.frame_dim[1]//4)
+            
 
         
 kbd = Keyboard()
@@ -151,7 +222,10 @@ clock = Clock()
 player = Player(clock)
 welcome = Welcome("welcome.png")
 tutorial = Welcome("tutorial.png")
+wall = Wall("tree.png", Vector(WIDTH//2, HEIGHT//2))
+wall = Wall("tree.png", Vector(WIDTH//2-60, HEIGHT//2))
 inter = Interaction(welcome, tutorial, player, kbd)
+
 
 frame = simplegui.create_frame('Interactions', WIDTH, HEIGHT)
 frame.set_canvas_background('#2C6A6A')
