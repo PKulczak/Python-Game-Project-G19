@@ -20,8 +20,8 @@ class Welcome:
         canvas.draw_image(self.image, self.centre, self.dim, self.pos.get_p(), self.img_dest_dim)
 
 
-WIDTH = 500
-HEIGHT = 500
+WIDTH = 800
+HEIGHT = 480
 
 
 

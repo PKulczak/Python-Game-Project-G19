@@ -37,17 +37,18 @@ class Player:
         height = self.image.get_height()
         frame_height = height//self.rows
         
-        self.pos = Vector(frame_width/2, frame_height/2)
+        self.pos = Vector(150, 220)
         self.frame_center = [frame_width/2, frame_height/2]
         self.frame_dim = [frame_width, frame_height]
         self.frame_index = [0,0]
         
         self.vel = Vector(0,0)
         self.moving = False
+        self.scale_factor = 0.3
 
         self.player_left = self.pos.x - self.frame_center[0]
         self.player_right = self.pos.x + self.frame_center[0]
-        self.player_top = self.pos.y - self.frame_center[1]
+        self.player_top = self.pos.y
         self.player_bot = self.pos.y + self.frame_center[1]
 
 
@@ -56,12 +57,12 @@ class Player:
             canvas.draw_image(self.image, 
                     [self.frame_center[0] + self.frame_index[0] * self.frame_dim[0], 
                      self.frame_center[1] + self.frame_index[1] * self.frame_dim[1]], 
-                     self.frame_dim, [self.pos.x,self.pos.y], [self.frame_dim[0]//2,self.frame_dim[1]//2])
+                     self.frame_dim, [self.pos.x,self.pos.y], [self.frame_dim[0]*self.scale_factor,self.frame_dim[1]*self.scale_factor])
         else:
             canvas.draw_image(self.image, 
                     [self.frame_center[0] + 0 * self.frame_dim[0], 
                      self.frame_center[1] + self.frame_index[1] * self.frame_dim[1]], 
-                     self.frame_dim, [self.pos.x,self.pos.y], [self.frame_dim[0]//2,self.frame_dim[1]//2])
+                     self.frame_dim, [self.pos.x,self.pos.y], [self.frame_dim[0]*self.scale_factor,self.frame_dim[1]*self.scale_factor])
         self.clock.tick()
         move_on = self.clock.transition(6)
         if move_on == True:
@@ -123,19 +124,19 @@ class Interaction:
     def update(self):
         if self.keyboard.start:
             if self.keyboard.right:
-                self.player.vel = Vector(3, 0)
+                self.player.vel = Vector(2, 0)
                 self.player.frame_index[1] = 2
                 self.player.moving = True
             elif self.keyboard.left:
-                self.player.vel = Vector(-3,0)
+                self.player.vel = Vector(-2,0)
                 self.player.frame_index[1] = 1
                 self.player.moving = True
             elif self.keyboard.up:
-                self.player.vel = Vector(0,-3)
+                self.player.vel = Vector(0,-2)
                 self.player.frame_index[1] = 3
                 self.player.moving = True
             elif self.keyboard.down:
-                self.player.vel = Vector(0,3)
+                self.player.vel = Vector(0,2)
                 self.player.frame_index[1] = 0
                 self.player.moving = True
             else:
@@ -147,12 +148,13 @@ class Interaction:
         if self.keyboard.start:
             self.update()
             self.player.update()
+            self.background.draw(canvas)
             for x in walls_list:
                 x.draw(canvas)
                 col = x.collision(self.player)
                 if col == True:
                     x.interact(self.player)
-            self.background.draw(canvas)
+            #self.background.draw(canvas)
             self.player.draw(canvas)
         else:
             if not self.keyboard.tutorial:
@@ -171,7 +173,7 @@ class Wall:
         self.width = self.image.get_width()
         self.height = self.image.get_height()
         self.pos = pos
-        self.frame_dim = [self.width*2, self.height*2]
+        self.frame_dim = [self.width, self.height]
 
         self.wall_left = self.pos.x - (self.frame_dim[0]//2)
         self.wall_right = self.pos.x + (self.frame_dim[0]//2)
@@ -185,10 +187,10 @@ class Wall:
                      [self.width, self.height], [self.pos.x,self.pos.y], [self.frame_dim[0],self.frame_dim[1]])
         
     def collision(self, player):
-        player.player_left = player.pos.x - (player.frame_dim[0]//4)
-        player.player_right = player.pos.x + (player.frame_dim[0]//4)
-        player.player_top = player.pos.y - (player.frame_dim[1]//4)
-        player.player_bot = player.pos.y + (player.frame_dim[1]//4)
+        player.player_left = player.pos.x - ((player.frame_dim[0]//2)*player.scale_factor)
+        player.player_right = player.pos.x + ((player.frame_dim[0]//2)*player.scale_factor)
+        player.player_top = player.pos.y
+        player.player_bot = player.pos.y + ((player.frame_dim[1]//2)*player.scale_factor)
 
         col_left = ((self.wall_left - player.player_right) >= 0)
         col_right = ((player.player_left - self.wall_right) >= 0)
@@ -209,23 +211,43 @@ class Wall:
 
     def interact(self, player):
         if player.vel.x > 0:
-            player.pos.x = self.wall_left-(player.frame_dim[0]//4)
+            player.pos.x = self.wall_left-((player.frame_dim[0]//2)*player.scale_factor)-1
         if player.vel.x < 0:
-            player.pos.x = self.wall_right+(player.frame_dim[0]//4)
+            player.pos.x = self.wall_right+((player.frame_dim[0]//2)*player.scale_factor)+1
         if player.vel.y > 0:
-            player.pos.y = self.wall_top-(player.frame_dim[1]//4)
+            player.pos.y = self.wall_top-((player.frame_dim[1]//2)*player.scale_factor)-1
         if player.vel.y < 0:
-            player.pos.y = self.wall_bot+(player.frame_dim[1]//4)
+            player.pos.y = self.wall_bot+1
             
 class Background:
     def __init__(self, Map, width, height):
-        self.Map = simplegui._load_local_image(Map)
+        self.Map = simplegui._load_local_image(Map+".png")
+        self.map_name = Map
         self.width = width
         self.height = height
 
     def draw(self, canvas):
         canvas.draw_image(self.Map, (800/2,480/2), (800,480), (self.width/2, self.height/2), (self.width,self.height))
 
+    def load_wall(self):
+        with open(self.map_name+".txt","r") as file:
+            level = file.readlines()
+            x = y = 0
+            for row in level:
+                for col in row:
+                    if col == "t":
+                        wall = Wall("tree.png", Vector(8+(32*x), 0+(32*y)))
+                    if col == "w":
+                        wall = Wall("up.png", Vector(8+(32*x), 8+(32*y)))
+                    if col == "s":
+                        wall = Wall("up.png", Vector(8+(32*x), -8+(32*y)))
+                    if col == "a":
+                        wall = Wall("left.png", Vector(16+(32*x), 0+(32*y)))
+                    if col == "d":
+                        wall = Wall("left.png", Vector(0+(32*x), 0+(32*y)))
+                    x += 1
+                y += 1
+                x = 0
         
         
 kbd = Keyboard()
@@ -233,13 +255,12 @@ clock = Clock()
 player = Player(clock)
 welcome = Welcome("welcome.png")
 tutorial = Welcome("tutorial.png")
-wall = Wall("tree.png", Vector(WIDTH//2, HEIGHT//2))
-wall = Wall("tree.png", Vector(WIDTH//2-60, HEIGHT//2))
-background = Background("map.png", WIDTH, HEIGHT)
+background = Background("map2", WIDTH, HEIGHT)
+background.load_wall()
 inter = Interaction(welcome, tutorial, player, kbd, background)
 
 
-frame = simplegui.create_frame('Interactions', WIDTH, HEIGHT)
+frame = simplegui.create_frame('Pokemon', WIDTH, HEIGHT)
 frame.set_canvas_background('#2C6A6A')
 frame.set_draw_handler(inter.draw)
 frame.set_keydown_handler(kbd.keyDown)
