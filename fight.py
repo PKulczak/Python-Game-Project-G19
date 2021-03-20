@@ -4,6 +4,7 @@ except ImportError:
     import SimpleGUICS2Pygame.simpleguics2pygame as simplegui
 import time
 import random
+
 class Player:
     def __init__(self, name, pokemon_list, Level):
         self.name = name
@@ -36,7 +37,7 @@ class Fight:
         self.catch = False
         self.centre = [0,0]
         self.pos = [[(348,145),(348,265),(348,380)],[(598,145),(598,265),(598,380)]]
-        #self.end
+        self.end = False
 
     def draw(self, canvas):
         if self.change:
@@ -97,9 +98,9 @@ class Fight:
             canvas.draw_text("HP:"+str(self.pokemon.HP)+"/"+str(self.fullhp), (550, 295), 25, 'Black')
             self.pokemon.draw(canvas)
             self.monster.draw(canvas)
-            if self.run:
-                canvas.draw_text(self.info, (120, 415), 25, 'White')
-            elif self.count != 0:
+##            if self.run:
+##                canvas.draw_text(self.info, (120, 415), 25, 'White')
+            if self.count != 0:
                 if not self.first:
                     if self.attack:
                         self.monster.draw_effect(canvas)
@@ -107,6 +108,8 @@ class Fight:
                         self.pokemon.draw_effect(canvas)
                 canvas.draw_text(self.info, (120, 415), 25, 'White')
                 self.count = self.count - 1
+            elif self.end:
+                return self.poke_list
             else:
                 self.first = False
                 if self.attack:
@@ -147,6 +150,8 @@ class Fight:
                     if run == 1:
                         self.info = "You escaped!"
                         self.run = True
+                        self.end = True
+                        self.count = 70
                     else:
                         self.info = "Escape failed!"
                         self.attack = False
@@ -171,15 +176,20 @@ class Fight:
         else:
             if pokemon.HP > 0 and len(self.mons_list) == 0:
                 self.info = "Fight end, you win!"
+                self.count = 70
+                self.end = True
             elif monster.HP >0:
                 survive = False
-                for i in range(0,len(self.pokemon_list)):
+                for i in range(0,len(self.poke_list)):
                     if self.poke_list[i].HP>0:
                         survive = True
                 if survive:
                     self.change = True
                 else:
-                    self.info = "Fight end, "+monster.name+" win!"
+                    self.info = "Fight end, You lose!"
+                    self.attack = False
+                    self.count = 70
+                    self.end = True
             elif pokemon.HP > 0:
                 self.mons_list.remove(monster)
                 if not(len(self.mons_list) == 0):
